@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var Product = require('../models/product')
 var passport = require('passport');
+var Cart = require('../models/cart')
 
 router.get('/', function(req, res) {
   Product.find(function(err, docs) {
@@ -11,27 +12,19 @@ router.get('/', function(req, res) {
   })
 });
 
-router.get('/user/signup', function(req, res) {
-  var messages = req.flash('error');
-  res.render('./user/signup', {
-    messages: messages,
-    hasErrors: messages.length > 0
-  });
-});
+router.get('/add-to-cart/:id', function(req, res) {
+  var productId = req.params.id;
+  var cart = new Cart(req.session.cart ? req.session.cart : {});
 
-router.get('/user/profile', function(req, res) {
-  res.render('./user/profile');
-});
-
-router.get('/user/signin', function(req, res) {
-  res.render('./user/signin');
-});
-
-
-router.post('/user/signup', passport.authenticate('local.signup', {
-  successRedirect: 'profile',
-  failureRedirect: 'signup',
-  failureFlash: true
-}))
+  Product.findById(productId, function(err, product) {
+    if (err) {
+      return res.redirect('/');
+    }
+    cart.add(product, product.id);
+    req.session.cart = cart;
+    console.log(req.session.cart);
+    res.redirect('/')
+  })
+})
 
 module.exports = router;

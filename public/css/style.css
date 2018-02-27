@@ -1,4 +1,10 @@
 .navbar, .card {
   margin-bottom: 15px !important; }
 
+.card-img-top {
+  height: 200px; }
+
+body {
+  background-color: black !important; }
+
 /*# sourceMappingURL=style.css.map */

@@ -12,12 +12,14 @@ passport.deserializeUser(function(id, done) {
   });
 });
 
+//Signup
+//Creating a new username
+//Checks if email is already being used
 passport.use('local.signup', new LocalStrategy({
   usernameField: 'email',
   passwordField: 'password',
   passReqToCallback: true
 }, function(req, email, password, done) {
-  //express validators
   req.checkBody('email', 'Invalid email').notEmpty().isEmail();
   req.checkBody('password', 'Invalid password').notEmpty().isLength({
     min: 4
@@ -43,12 +45,51 @@ passport.use('local.signup', new LocalStrategy({
     }
     var newUser = new User();
     newUser.email = email;
-    newUser.password = password;
+    newUser.password = newUser.encryptPassword(password);
     newUser.save(function(err, result) {
       if (err) {
         return done(err);
       }
       return done(null, newUser);
     });
+  });
+}));
+
+//Signin
+//Passport validation for log in
+//Gives error messages if password is incorrect or
+//if user is not found
+passport.use('local.signin', new LocalStrategy({
+  usernameField: 'email',
+  passwordField: 'password',
+  passReqToCallback: true
+}, function(req, email, password, done) {
+  req.checkBody('email', 'Invalid email').notEmpty().isEmail();
+  req.checkBody('password', 'Invalid password').notEmpty();
+  var errors = req.validationErrors();
+  if (errors) {
+    var messages = [];
+    errors.forEach(function(error) {
+      messages.push(error.msg);
+    });
+    return done(null, false, req.flash('error', messages));
+  }
+  User.findOne({
+    'email': email
+  }, function(err, user) {
+    if (err) {
+      return done(err);
+    }
+    if (!user) {
+      return done(null, false, {
+        message: 'No user found.'
+      });
+    }
+    if (!user.validPassword(password)) {
+      return done(null, false, {
+        message: 'Wrong password.'
+      });
+    }
+    return done(null, user);
   });
 }));

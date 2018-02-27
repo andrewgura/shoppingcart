@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 var passport = require('passport');
 var flash = require('connect-flash')
 var validator = require('express-validator');
+var MongoStore = require('connect-mongo')(session);
 
 var app = express();
 
@@ -44,21 +45,36 @@ app.use(cookieParser());
 app.use(session({
   secret: 'mysupersecret',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: new MongoStore({
+    mongooseConnection: mongoose.connection
+  }),
+  cookie: {
+    maxAge: 180 * 60 * 1000
+  }
 }));
 app.use(flash());
 app.use(passport.initialize());
-
-//
-//Set up static folder for imgs,styles
-//
+app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 
 //
 //Import and use routes
 //
 var routes = require('./routes/index');
+var userRoutes = require('./routes/user')
+
+
+//Check to see if there user is signed in
+app.use(function(req, res, next) {
+  res.locals.login = req.isAuthenticated();
+  res.locals.session = req.session;
+  next();
+})
+
+app.use(userRoutes);
 app.use(routes);
 
 //
