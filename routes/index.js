@@ -27,4 +27,17 @@ router.get('/add-to-cart/:id', function(req, res) {
   })
 })
 
+router.get('/shopping/shopping-cart', function(req, res) {
+  if (!req.session.cart) {
+    return res.render('./shopping/shopping-cart', {
+      products: null
+    });
+  }
+  var cart = new Cart(req.session.cart);
+  res.render('./shopping/shopping-cart', {
+    products: cart.generateArray(),
+    totalPrice: cart.totalPrice
+  })
+})
+
 module.exports = router;
